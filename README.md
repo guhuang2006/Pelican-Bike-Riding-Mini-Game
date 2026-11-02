@@ -6,7 +6,7 @@
 
 点击下面的链接直接开始游玩最新版本：
 
-👉 **[点击此处进入游戏](./releases/20261022_v1.3.html)**
+👉 **[点击此处进入游戏](https://guhuang2006.github.io/Pelican-Bike-Riding-Mini-Game/releases/v1.2-v1.3/20261022_v1.3.html)**
 *(注：如果链接无法点击，请手动在地址栏输入上述路径)*
 
 **作者**: guhuang2006
