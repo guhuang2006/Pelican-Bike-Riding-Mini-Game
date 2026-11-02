@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鹈鹕专送 · 纯 CSS 动画</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+<style>
+/* ============ 基础 ============ */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#16121f; --ink:#efe7d8; --dim:#b8ac9d;
+  --amber:#ffd257; --teal:#2ea99a; --panel:#221b31;
+  --disp:'ZCOOL KuaiLe','Noto Sans SC',sans-serif;
+  --body:'Noto Sans SC',system-ui,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+body{
+  font-family:var(--body); color:var(--ink); min-height:100vh;
+  background:
+    radial-gradient(1100px 560px at 85% -8%, rgba(62,44,94,.55), transparent 60%),
+    radial-gradient(900px 480px at -8% 108%, rgba(20,64,72,.45), transparent 55%),
+    radial-gradient(rgba(255,255,255,.028) 1px, transparent 1.6px) 0 0/26px 26px,
+    var(--bg);
+}
+.page{max-width:1160px;margin:0 auto;padding:34px 20px 0}
+.vh{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+::selection{background:var(--amber);color:#241a06}
+
+/* ============ 舞台（1u = 设计稿 1px = 0.1cqw） ============ */
+.stagewrap{container-type:inline-size;position:relative;z-index:0}
+.stage{
+  --u:1px; aspect-ratio:5/3; width:100%; position:relative; overflow:hidden;
+  border-radius:14px; border:6px solid #0f0c16;
+  box-shadow:0 30px 60px -20px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.06);
+  --spd:1;
+  --oDay:0; --oDusk:1; --oNight:0;
+  --sunX:calc(756*var(--u)); --sunY:calc(206*var(--u)); --sunS:calc(94*var(--u));
+  --sunC:#ffd27d; --glowC:rgba(255,190,110,.55); --rayO:.45; --sunO:1;
+  --starsO:0; --moonO:0; --glitO:.55; --glitter:rgba(255,206,130,.85);
+  --cloud:#ffd9ae; --cloudO:.85;
+  --sand:#d9a06b; --walk:#8a6b62; --road:#4c4454; --paint:#ffe9b8;
+  --silh:#3d2f4d; --silhF:#6b5876; --bush:#33465a; --fg:#241a2e;
+  --lampO:0; --lampHead:#ffdf9a;
+  --rainO:0; --stormO:0; --puddleO:0;
+  --wheel:calc(1.12s / var(--spd)); --pedal:calc(2.1s / var(--spd));
+  --belt:calc(8.6s / var(--spd)); --fgT:calc(1.45s / var(--spd)); --dash:calc(.35s / var(--spd));
+}
+@supports (width:1cqw){ .stage{--u:.1cqw} }
+.stage *{position:absolute}
+
+/* —— 天色主题 —— */
+#th-day:checked ~ .stagewrap .stage{
+  --oDay:1;--oDusk:0;--oNight:0;
+  --sunX:calc(190*var(--u));--sunY:calc(100*var(--u));--sunS:calc(72*var(--u));
+  --sunC:#ffe9a0;--glowC:rgba(255,232,150,.5);--rayO:.6;
+  --glitO:.25;--glitter:rgba(255,255,255,.8);
+  --cloud:#ffffff;--cloudO:.92;
+  --sand:#eed9a4;--walk:#cbb98c;--road:#6b7484;--paint:#f5f1e2;
+  --silh:#3c5a50;--silhF:#7fa392;--bush:#3f7a58;--fg:#2f4a3d;
+}
+#th-night:checked ~ .stagewrap .stage{
+  --oDay:0;--oDusk:0;--oNight:1;
+  --starsO:1;--moonO:1;--sunY:calc(-160*var(--u));--rayO:0;
+  --glitO:.3;--glitter:rgba(212,232,255,.7);
+  --cloud:#7d8bb6;--cloudO:.28;
+  --sand:#5b5470;--walk:#3e3950;--road:#2b2836;--paint:#a8a89e;
+  --silh:#191430;--silhF:#2a2547;--bush:#201d38;--fg:#120e1f;
+  --lampO:1;--lampHead:#ffd98c;
+}
+#sp-stroll:checked ~ .stagewrap .stage{--spd:.55}
+#sp-rush:checked ~ .stagewrap .stage{--spd:1.75}
+#hold:checked ~ .stagewrap .stage,
+#hold:checked ~ .stagewrap .stage *{animation-play-state:paused !important}
+#wx-rain:checked ~ .stagewrap .stage{
+  --rainO:1;--stormO:1;--puddleO:.9;--sunO:.3;--rayO:0;--glitO:0;
+  --cloud:#66707f;--cloudO:.95;
+}
+
+/* —— 坐骑 / 座驾 切换 —— */
+.veh-skate,.veh-escooter,.bird-parrot,.bird-owl{display:none}
+#vh-skate:checked ~ .stagewrap :is(.veh-bike,.bike-extra){display:none}
+#vh-skate:checked ~ .stagewrap .veh-skate{display:block}
+#vh-escooter:checked ~ .stagewrap :is(.veh-bike,.bike-extra){display:none}
+#vh-escooter:checked ~ .stagewrap .veh-escooter{display:block}
+#bd-parrot:checked ~ .stagewrap .bird-pelican{display:none}
+#bd-parrot:checked ~ .stagewrap .bird-parrot{display:block}
+#bd-owl:checked ~ .stagewrap .bird-pelican{display:none}
+#bd-owl:checked ~ .stagewrap .bird-owl{display:block}
+.rider{left:0;top:0;width:0;height:0;transition:transform .5s ease, scale .12s ease}
+#vh-skate:checked ~ .stagewrap .rider{transform:translate(calc(26*var(--u)),calc(18*var(--u)))}
+#vh-escooter:checked ~ .stagewrap .rider{transform:translate(calc(18*var(--u)),calc(14*var(--u)))}
+.birdx{left:0;top:0;width:0;height:0}
+
+/* ============ 天空 / 日月星 ============ */
+.sky{inset:0;transition:opacity .9s ease}
+.sky.day{background:linear-gradient(180deg,#74b9e0,#a9dcef 55%,#ffeccb);opacity:var(--oDay)}
+.sky.dusk{background:linear-gradient(180deg,#41507f 0%,#8d6a8f 38%,#e08a63 68%,#ffd28f);opacity:var(--oDusk)}
+.sky.night{background:linear-gradient(180deg,#0a1630,#16294a 60%,#274b66);opacity:var(--oNight)}
+
+.stars{left:0;top:0;width:calc(2*var(--u));height:calc(2*var(--u));border-radius:50%;
+  opacity:var(--starsO);transition:opacity 1s;
+  box-shadow:
+   calc(40*var(--u)) calc(52*var(--u)) 0 calc(.6*var(--u)) #fff,
+   calc(118*var(--u)) calc(26*var(--u)) 0 0 rgba(255,255,255,.85),
+   calc(196*var(--u)) calc(74*var(--u)) 0 calc(.4*var(--u)) #fff,
+   calc(262*var(--u)) calc(38*var(--u)) 0 0 #fff,
+   calc(330*var(--u)) calc(90*var(--u)) 0 calc(.5*var(--u)) rgba(255,255,255,.9),
+   calc(398*var(--u)) calc(22*var(--u)) 0 0 #fff,
+   calc(470*var(--u)) calc(66*var(--u)) 0 calc(.4*var(--u)) #fff,
+   calc(542*var(--u)) calc(30*var(--u)) 0 calc(.8*var(--u)) #fff,
+   calc(610*var(--u)) calc(84*var(--u)) 0 0 rgba(255,255,255,.8),
+   calc(688*var(--u)) calc(40*var(--u)) 0 calc(.4*var(--u)) #fff,
+   calc(760*var(--u)) calc(18*var(--u)) 0 0 #fff,
+   calc(824*var(--u)) calc(72*var(--u)) 0 calc(.5*var(--u)) #fff,
+   calc(896*var(--u)) calc(46*var(--u)) 0 calc(.4*var(--u)) rgba(255,255,255,.9),
+   calc(952*var(--u)) calc(96*var(--u)) 0 0 #fff,
+   calc(74*var(--u)) calc(128*var(--u)) 0 0 rgba(255,255,255,.7),
+   calc(168*var(--u)) calc(150*var(--u)) 0 calc(.4*var(--u)) #fff,
+   calc(286*var(--u)) calc(122*var(--u)) 0 0 #fff,
+   calc(414*var(--u)) calc(146*var(--u)) 0 calc(.5*var(--u)) rgba(255,255,255,.85),
+   calc(528*var(--u)) calc(118*var(--u)) 0 0 #fff,
+   calc(642*var(--u)) calc(152*var(--u)) 0 calc(.4*var(--u)) #fff,
+   calc(748*var(--u)) calc(126*var(--u)) 0 0 rgba(255,255,255,.75),
+   calc(866*var(--u)) calc(142*var(--u)) 0 calc(.5*var(--u)) #fff,
+   calc(226*var(--u)) calc(190*var(--u)) 0 0 rgba(255,255,255,.6),
+   calc(586*var(--u)) calc(186*var(--u)) 0 calc(.4*var(--u)) rgba(255,255,255,.7);
+}
+.tw{border-radius:50%;background:#fff;opacity:var(--starsO);animation:kTw 2.6s ease-in-out infinite alternate}
+.tw.t1{left:calc(300*var(--u));top:calc(60*var(--u));width:calc(4*var(--u));height:calc(4*var(--u))}
+.tw.t2{left:calc(700*var(--u));top:calc(110*var(--u));width:calc(3*var(--u));height:calc(3*var(--u));animation-delay:-1.3s}
+.tw.t3{left:calc(500*var(--u));top:calc(40*var(--u));width:calc(3.4*var(--u));height:calc(3.4*var(--u));animation-delay:-.6s}
+@keyframes kTw{from{transform:scale(.6);opacity:.4}to{transform:scale(1.2);opacity:1}}
+
+.sun{left:var(--sunX);top:var(--sunY);width:var(--sunS);height:var(--sunS);opacity:var(--sunO);
+  transform:translate(-50%,-50%);transition:left 1.2s ease,top 1.2s ease,width .9s,height .9s,opacity .9s}
+.sun .rays{inset:calc(-32*var(--u));border-radius:50%;opacity:var(--rayO);transition:opacity .9s;
+  background:repeating-conic-gradient(from 0deg,var(--glowC) 0deg 4deg,transparent 4deg 18deg);
+  -webkit-mask:radial-gradient(circle,transparent 52%,#000 58% 68%,transparent 72%);
+          mask:radial-gradient(circle,transparent 52%,#000 58% 68%,transparent 72%);
+  animation:kSpin 90s linear infinite}
+.sun::before{content:"";inset:0;border-radius:50%;background:var(--sunC);
+  box-shadow:0 0 calc(36*var(--u)) calc(12*var(--u)) var(--glowC);transition:background .9s,box-shadow .9s}
+.moon{left:calc(730*var(--u));top:calc(112*var(--u));width:calc(72*var(--u));height:calc(72*var(--u));
+  border-radius:50%;transform:translate(-50%,-50%);
+  background:
+   radial-gradient(circle at 36% 60%,rgba(140,150,140,.5) 0 9%,transparent 10%),
+   radial-gradient(circle at 62% 34%,rgba(140,150,140,.45) 0 7%,transparent 8%),
+   #eef2dd;
+  box-shadow:0 0 calc(30*var(--u)) calc(8*var(--u)) rgba(210,225,255,.35);
+  opacity:var(--moonO);transition:opacity .9s}
+
+/* ============ 云 / 远山 / 飞鸟 / 帆船 ============ */
+.cloud{background:var(--cloud);opacity:var(--cloudO);transition:background .9s,opacity .9s;
+  animation:kCloud linear infinite}
+.cloud::before,.cloud::after{content:"";background:inherit;border-radius:50%}
+.cloud::before{left:12%;bottom:26%;width:52%;height:110%}
+.cloud::after{right:10%;bottom:38%;width:38%;height:80%}
+.cloud.c1{top:calc(64*var(--u));width:calc(150*var(--u));height:calc(30*var(--u));border-radius:calc(20*var(--u));animation-duration:calc(72s/var(--spd))}
+.cloud.c2{top:calc(142*var(--u));width:calc(210*var(--u));height:calc(36*var(--u));border-radius:calc(24*var(--u));animation-duration:calc(96s/var(--spd));animation-delay:-38s}
+.cloud.c3{top:calc(38*var(--u));width:calc(110*var(--u));height:calc(24*var(--u));border-radius:calc(16*var(--u));animation-duration:calc(58s/var(--spd));animation-delay:-20s}
+@keyframes kCloud{from{transform:translateX(calc(1080*var(--u)))}to{transform:translateX(calc(-260*var(--u)))}}
+
+.island{left:calc(40*var(--u));top:calc(286*var(--u));width:calc(250*var(--u));height:calc(18*var(--u));
+  border-radius:50% 50% 0 0/100% 100% 0 0;background:var(--silhF);opacity:.85;transition:background .9s}
+.island::after{content:"";left:calc(170*var(--u));top:calc(-8*var(--u));width:calc(70*var(--u));height:calc(10*var(--u));
+  border-radius:50% 50% 0 0/100% 100% 0 0;background:inherit}
+
+.boat{top:calc(342*var(--u));left:0;width:calc(46*var(--u));height:calc(34*var(--u));
+  animation:kBoat calc(46s/var(--spd)) linear infinite}
+.boat i{display:block;background:var(--silh);transition:background .9s}
+.boat .hull{bottom:0;width:calc(46*var(--u));height:calc(9*var(--u));clip-path:polygon(0 0,100% 0,78% 100%,20% 100%)}
+.boat .mast{left:calc(21*var(--u));bottom:calc(8*var(--u));width:calc(2.4*var(--u));height:calc(24*var(--u))}
+.boat .sail{left:calc(24*var(--u));bottom:calc(9*var(--u));width:calc(16*var(--u));height:calc(20*var(--u));
+  background:var(--cloud);clip-path:polygon(0 0,100% 100%,0 100%);transition:background .9s}
+@keyframes kBoat{from{transform:translateX(calc(1060*var(--u)))}to{transform:translateX(calc(-120*var(--u)))}}
+
+.birds .db{width:calc(16*var(--u));height:calc(6*var(--u));animation:kFly linear infinite}
+.birds .db::before,.birds .db::after{content:"";top:0;width:calc(8*var(--u));height:calc(6*var(--u));
+  border:calc(2.2*var(--u)) solid var(--silh);border-bottom:0;border-radius:100% 100% 0 0;
+  border-left-color:transparent;border-right-color:transparent}
+.birds .db::before{left:0;transform-origin:100% 100%;animation:kFlapL .5s ease-in-out infinite alternate}
+.birds .db::after{right:0;transform-origin:0 100%;animation:kFlapR .5s ease-in-out infinite alternate}
+.birds .b1{top:calc(132*var(--u));animation-duration:calc(26s/var(--spd))}
+.birds .b2{top:calc(176*var(--u));animation-duration:calc(34s/var(--spd));animation-delay:-12s;scale:.72}
+.birds .b3{top:calc(96*var(--u));animation-duration:calc(22s/var(--spd));animation-delay:-6s;scale:.6}
+@keyframes kFly{from{transform:translateX(calc(1060*var(--u)))}to{transform:translateX(calc(-60*var(--u)))}}
+@keyframes kFlapL{from{transform:rotate(8deg)}to{transform:rotate(-30deg)}}
+@keyframes kFlapR{from{transform:rotate(-8deg)}to{transform:rotate(30deg)}}
+
+/* ============ 海面 ============ */
+.sea{left:0;right:0;top:calc(300*var(--u));height:calc(136*var(--u));transition:opacity .9s}
+.sea.day{background:linear-gradient(180deg,#7fc4de,#3f8fb8 60%,#2f7ba6);opacity:var(--oDay)}
+.sea.dusk{background:linear-gradient(180deg,#e08a63,#5b6d8f 45%,#2e4a66);opacity:var(--oDusk)}
+.sea.night{background:linear-gradient(180deg,#14324a,#0d2237 60%,#0a1b2c);opacity:var(--oNight)}
+.glitter{left:calc(var(--sunX) - 60*var(--u));top:calc(302*var(--u));
+  width:calc(120*var(--u));height:calc(130*var(--u));
+  background:repeating-linear-gradient(180deg,var(--glitter) 0 calc(3*var(--u)),transparent calc(3*var(--u)) calc(9*var(--u)));
+  -webkit-mask:radial-gradient(120% 100% at 50% 0,#000 25%,transparent 78%);
+          mask:radial-gradient(120% 100% at 50% 0,#000 25%,transparent 78%);
+  animation:kGlit 2.4s ease-in-out infinite alternate;transition:left 1.2s ease}
+@keyframes kGlit{from{opacity:calc(var(--glitO)*.55)}to{opacity:var(--glitO)}}
+.wrow{left:calc(-100*var(--u));width:calc(1200*var(--u));height:calc(5*var(--u));border-radius:calc(3*var(--u));
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.32) 0 calc(26*var(--u)),transparent calc(26*var(--u)) calc(74*var(--u)));
+  animation:kWave linear infinite}
+.wrow.w1{top:calc(318*var(--u));animation-duration:calc(3.4s/var(--spd))}
+.wrow.w2{top:calc(344*var(--u));animation-duration:calc(4.3s/var(--spd));opacity:.8}
+.wrow.w3{top:calc(372*var(--u));animation-duration:calc(5.2s/var(--spd));opacity:.6}
+.wrow.w4{top:calc(402*var(--u));animation-duration:calc(6.4s/var(--spd));opacity:.45}
+@keyframes kWave{to{transform:translateX(calc(-74*var(--u)))}}
+
+/* ============ 沙滩 / 中景传送带 ============ */
+.beach{left:0;right:0;top:calc(430*var(--u));bottom:0;background:var(--sand);transition:background .9s}
+.belt{left:0;top:calc(486*var(--u));width:calc(2000*var(--u));height:0;animation:kBelt var(--belt) linear infinite}
+.bgroup{left:0;width:calc(1000*var(--u));height:0}
+.bgroup + .bgroup{left:calc(1000*var(--u))}
+@keyframes kBelt{to{transform:translateX(calc(-1000*var(--u)))}}
+.belt .it{bottom:0;transform-origin:bottom center}
+
+.lamp{width:calc(5*var(--u));height:calc(96*var(--u));background:var(--silh);transition:background .9s;border-radius:calc(2*var(--u))}
+.lamp::before{content:"";left:calc(-5*var(--u));top:calc(-6*var(--u));width:calc(15*var(--u));height:calc(11*var(--u));
+  border-radius:calc(4*var(--u)) calc(4*var(--u)) calc(2*var(--u)) calc(2*var(--u));
+  background:var(--lampHead);box-shadow:0 calc(3*var(--u)) calc(10*var(--u)) calc(2*var(--u)) rgba(255,217,140,var(--lampO));transition:box-shadow .9s}
+.lamp::after{content:"";left:calc(-14*var(--u));top:calc(-24*var(--u));width:calc(33*var(--u));height:calc(33*var(--u));
+  border-radius:50%;background:radial-gradient(circle,rgba(255,214,130,.55),transparent 70%);
+  opacity:var(--lampO);transition:opacity .9s}
+.bush{width:calc(52*var(--u));height:calc(30*var(--u));background:var(--bush);transition:background .9s;
+  border-radius:50% 50% 42% 42%/90% 90% 20% 20%}
+.bush::before{content:"";left:calc(-14*var(--u));bottom:0;width:calc(28*var(--u));height:calc(20*var(--u));background:inherit;border-radius:inherit}
+.bush::after{content:"";right:calc(-16*var(--u));bottom:0;width:calc(32*var(--u));height:calc(24*var(--u));background:inherit;border-radius:inherit}
+.bench{width:calc(66*var(--u));height:calc(32*var(--u))}
+.bench::before{content:"";left:0;bottom:calc(13*var(--u));width:calc(66*var(--u));height:calc(7*var(--u));
+  background:var(--silh);border-radius:calc(2*var(--u));
+  box-shadow:0 calc(-11*var(--u)) 0 calc(-1*var(--u)) var(--silh);transition:background .9s,box-shadow .9s}
+.bench::after{content:"";left:calc(5*var(--u));bottom:0;width:calc(5*var(--u));height:calc(14*var(--u));
+  background:var(--silh);box-shadow:calc(51*var(--u)) 0 0 var(--silh);transition:box-shadow .9s,background .9s}
+.sign{width:calc(6*var(--u));height:calc(72*var(--u));background:var(--silh);transition:background .9s}
+.sign::before{content:"";left:calc(-25*var(--u));bottom:calc(52*var(--u));width:calc(56*var(--u));height:calc(26*var(--u));
+  border-radius:calc(5*var(--u));background-color:var(--silh);
+  background-image:linear-gradient(var(--paint) 0 calc(3*var(--u)),transparent calc(3*var(--u)) calc(9*var(--u)),var(--paint) calc(9*var(--u)) calc(12*var(--u)),transparent calc(12*var(--u)));
+  background-size:calc(36*var(--u)) calc(12*var(--u));background-position:calc(10*var(--u)) calc(7*var(--u));background-repeat:no-repeat;
+  transition:background-color .9s}
+.buoy{width:calc(18*var(--u));height:calc(24*var(--u));border-radius:46% 46% 40% 40%/60% 60% 34% 34%;
+  background:repeating-linear-gradient(180deg,#d24d3e 0 calc(6*var(--u)),#f0e5d0 calc(6*var(--u)) calc(12*var(--u)))}
+.rock{width:calc(30*var(--u));height:calc(12*var(--u));border-radius:50% 50% 40% 40%/100% 100% 30% 30%;
+  background:var(--silhF);opacity:.9;transition:background .9s}
+
+/* ============ 人行道 / 马路 ============ */
+.sidewalk{left:0;right:0;top:calc(486*var(--u));height:calc(15*var(--u));background:var(--walk);transition:background .9s;
+  background-image:repeating-linear-gradient(90deg,rgba(0,0,0,.14) 0 calc(2*var(--u)),transparent calc(2*var(--u)) calc(90*var(--u)))}
+.roadbed{left:0;right:0;top:calc(501*var(--u));bottom:0;background:var(--road);transition:background .9s;
+  box-shadow:inset 0 calc(3*var(--u)) 0 rgba(0,0,0,.22)}
+.lane{left:0;top:calc(556*var(--u));width:calc(1000*var(--u));height:calc(7*var(--u));border-radius:calc(2*var(--u));opacity:.9;
+  background:repeating-linear-gradient(90deg,var(--paint) 0 calc(46*var(--u)),transparent calc(46*var(--u)) calc(90*var(--u)));
+  animation:kDash var(--dash) linear infinite}
+@keyframes kDash{to{background-position:calc(-90*var(--u)) 0}}
+
+/* ============ 主角总装（原点 = 自行车中轴） ============ */
+.rig{left:calc(460*var(--u));top:calc(482*var(--u));width:0;height:0}
+.shadow{left:calc(-150*var(--u));top:calc(40*var(--u));width:calc(300*var(--u));height:calc(20*var(--u));border-radius:50%;
+  background:radial-gradient(closest-side,rgba(15,6,26,.38),transparent 72%)}
+.bar{height:calc(5*var(--u));top:calc(-2.5*var(--u));transform-origin:0 50%;background:#1f9d8c;border-radius:calc(3*var(--u))}
+
+/* ---- 自行车 ---- */
+.wheel{width:calc(96*var(--u));height:calc(96*var(--u));top:calc(-48*var(--u));
+  border:calc(7*var(--u)) solid #2c2a35;border-radius:50%;animation:kSpin var(--wheel) linear infinite}
+.wheel.rear{left:calc(-146*var(--u))}.wheel.front{left:calc(50*var(--u))}
+.wheel::before{content:"";inset:calc(5*var(--u));border-radius:50%;
+  background:repeating-conic-gradient(from 0deg,#cfd3dc 0deg 2.4deg,transparent 2.4deg 45deg);
+  box-shadow:inset 0 0 0 calc(2.4*var(--u)) #9aa0ad}
+.wheel::after{content:"";left:calc(50% - 6*var(--u));top:calc(50% - 6*var(--u));
+  width:calc(12*var(--u));height:calc(12*var(--u));border-radius:50%;background:#3a3844}
+.cog{left:calc(41*var(--u));top:calc(41*var(--u));width:calc(14*var(--u));height:calc(14*var(--u));
+  border:calc(3*var(--u)) dashed #4a4453;border-radius:50%}
+.fender{width:calc(104*var(--u));height:calc(104*var(--u));border:calc(6*var(--u)) solid #f2e4c4;border-radius:50%;
+  border-bottom-color:transparent;border-left-color:transparent}
+.fender.fr{left:calc(-150*var(--u));top:calc(-52*var(--u));transform:rotate(-148deg)}
+.fender.ff{left:calc(46*var(--u));top:calc(-52*var(--u));transform:rotate(-170deg)}
+.chainT{left:calc(-98*var(--u));top:calc(-9.5*var(--u));width:calc(99*var(--u));height:calc(3*var(--u));background:#554d63;transform:rotate(-4.6deg);border-radius:calc(2*var(--u))}
+.chainB{left:calc(-98*var(--u));top:calc(6.5*var(--u));width:calc(99*var(--u));height:calc(3*var(--u));background:#554d63;transform:rotate(4.6deg);border-radius:calc(2*var(--u))}
+.chainstay{left:calc(-98*var(--u));width:calc(99*var(--u))}
+.seatstay{left:calc(-98*var(--u));width:calc(94*var(--u));transform:rotate(-43.3deg)}
+.seattube{width:calc(72*var(--u));transform:rotate(-115deg)}
+.toptube{left:calc(-30*var(--u));top:calc(-66.5*var(--u));width:calc(89*var(--u));transform:rotate(3.9deg)}
+.downtube{width:calc(77*var(--u));transform:rotate(-35.4deg)}
+.headtube{left:calc(58*var(--u));top:calc(-60.5*var(--u));width:calc(26*var(--u));transform:rotate(61deg)}
+.fork{left:calc(70*var(--u));top:calc(-38.5*var(--u));width:calc(47*var(--u));transform:rotate(52deg)}
+.stem{left:calc(58*var(--u));top:calc(-60.5*var(--u));width:calc(24*var(--u));transform:rotate(-105deg)}
+.hbar{left:calc(51*var(--u));top:calc(-83.5*var(--u));width:calc(31*var(--u));transform:rotate(-12deg)}
+.seatpost{left:calc(-30*var(--u));top:calc(-66.5*var(--u));width:calc(16*var(--u));transform:rotate(-113deg)}
+.saddle{left:calc(-56*var(--u));top:calc(-84*var(--u));width:calc(36*var(--u));height:calc(10*var(--u));
+  background:#6d4a2f;border-radius:calc(7*var(--u)) calc(10*var(--u)) calc(4*var(--u)) calc(4*var(--u));transform:rotate(-7deg)}
+.crankN,.crankF{left:0;top:0;animation:kSpin var(--pedal) linear infinite}
+.arm{width:calc(27*var(--u));height:calc(5*var(--u));left:calc(-1*var(--u));top:calc(-2.5*var(--u));
+  transform-origin:0 50%;border-radius:calc(3*var(--u));background:#3b3547}
+.arm.an{transform:rotate(-90deg)}
+.arm.af{transform:rotate(90deg);background:#2b2735}
+.pwrap{left:calc(24*var(--u));top:calc(-1*var(--u));width:0;height:0}
+.pwrap.pn{transform:rotate(90deg)}
+.pwrap.pf{transform:rotate(-90deg)}
+.pedal{left:calc(-9*var(--u));top:calc(-3*var(--u));width:calc(18*var(--u));height:calc(6*var(--u));
+  border-radius:calc(2*var(--u));background:#23202c;box-shadow:inset 0 calc(-2*var(--u)) 0 rgba(255,255,255,.12)}
+.pn .pedal{animation:kPedalA var(--pedal) linear infinite}
+.pf .pedal{animation:kPedalB var(--pedal) linear infinite;background:#191622}
+@keyframes kPedalA{from{transform:rotate(90deg)}to{transform:rotate(-270deg)}}
+@keyframes kPedalB{from{transform:rotate(-90deg)}to{transform:rotate(-450deg)}}
+.ring{left:calc(-15*var(--u));top:calc(-15*var(--u));width:calc(30*var(--u));height:calc(30*var(--u));
+  border:calc(3.5*var(--u)) solid #554d63;border-radius:50%}
+.ring::after{content:"";inset:calc(-2*var(--u));border:calc(2*var(--u)) dashed rgba(0,0,0,.35);border-radius:50%}
+.cap{left:calc(-4*var(--u));top:calc(-4*var(--u));width:calc(8*var(--u));height:calc(8*var(--u));border-radius:50%;background:#554d63}
+@keyframes kSpin{to{transform:rotate(360deg)}}
+
+/* ---- 腿：踩踏（12 帧手算骨骼） ---- */
+.leg .thigh{left:calc(-20*var(--u));top:calc(-67*var(--u));width:calc(46*var(--u));height:calc(14*var(--u));
+  border-radius:calc(8*var(--u));transform-origin:0 50%;background:var(--legc);animation:kThigh var(--pedal) linear infinite}
+.leg .shin{left:calc(44*var(--u));top:calc(2.5*var(--u));width:calc(44*var(--u));height:calc(9*var(--u));
+  border-radius:calc(6*var(--u));transform-origin:0 50%;background:var(--legc);animation:kShin var(--pedal) linear infinite}
+.leg .shin::after{content:"";left:calc(-3*var(--u));top:calc(1*var(--u));width:calc(7*var(--u));height:calc(7*var(--u));border-radius:50%;background:rgba(0,0,0,.18)}
+.leg .foot{left:calc(37*var(--u));top:0;width:calc(22*var(--u));height:calc(10*var(--u));background:var(--legc);
+  transform-origin:15% 50%;animation:kFoot var(--pedal) linear infinite;
+  clip-path:polygon(0% 22%,34% 0%,100% 12%,76% 40%,100% 55%,78% 70%,96% 96%,30% 100%,0% 78%)}
+.leg.near,.leg.ln{--legc:#f08c2e}
+.leg.far,.leg.lf{--legc:#c46a17}
+.leg.far .thigh,.leg.far .shin,.leg.far .foot{animation-delay:calc(var(--pedal) / -2)}
+@keyframes kThigh{
+ 0%{transform:rotate(-5.1deg)}8.33%{transform:rotate(-8.4deg)}16.67%{transform:rotate(1.5deg)}
+ 25%{transform:rotate(17.8deg)}33.33%{transform:rotate(36.5deg)}41.67%{transform:rotate(53.2deg)}
+ 50%{transform:rotate(60.6deg)}58.33%{transform:rotate(59.3deg)}66.67%{transform:rotate(54.4deg)}
+ 75%{transform:rotate(46.6deg)}83.33%{transform:rotate(33.8deg)}91.67%{transform:rotate(13.9deg)}
+ 100%{transform:rotate(-5.1deg)}}
+@keyframes kShin{
+ 0%{transform:rotate(129.2deg)}8.33%{transform:rotate(114.2deg)}16.67%{transform:rotate(92.9deg)}
+ 25%{transform:rotate(69.5deg)}33.33%{transform:rotate(46.6deg)}41.67%{transform:rotate(30deg)}
+ 50%{transform:rotate(32.5deg)}58.33%{transform:rotate(51.7deg)}66.67%{transform:rotate(75.1deg)}
+ 75%{transform:rotate(98.2deg)}83.33%{transform:rotate(118.4deg)}91.67%{transform:rotate(130.9deg)}
+ 100%{transform:rotate(129.2deg)}}
+@keyframes kFoot{
+ 0%{transform:rotate(-124.1deg)}8.33%{transform:rotate(-105.8deg)}16.67%{transform:rotate(-94.4deg)}
+ 25%{transform:rotate(-87.3deg)}33.33%{transform:rotate(-83.1deg)}41.67%{transform:rotate(-83.2deg)}
+ 50%{transform:rotate(-93.1deg)}58.33%{transform:rotate(-111deg)}66.67%{transform:rotate(-129.5deg)}
+ 75%{transform:rotate(-144.8deg)}83.33%{transform:rotate(-152.2deg)}91.67%{transform:rotate(-144.8deg)}
+ 100%{transform:rotate(-124.1deg)}}
+
+/* ---- 滑板 ---- */
+.sdeck{left:calc(-78*var(--u));top:calc(26*var(--u));width:calc(156*var(--u));height:calc(8*var(--u));
+  border-radius:calc(5*var(--u));background:linear-gradient(180deg,#8a5a34,#6d4426)}
+.sdeck::before,.sdeck::after{content:"";top:0;width:calc(18*var(--u));height:calc(8*var(--u));background:inherit;border-radius:calc(5*var(--u))}
+.sdeck::before{left:calc(-14*var(--u));transform:rotate(-28deg);transform-origin:100% 50%}
+.sdeck::after{right:calc(-14*var(--u));transform:rotate(28deg);transform-origin:0 50%}
+.truck{top:calc(34*var(--u));width:calc(10*var(--u));height:calc(8*var(--u));background:#4a4453;border-radius:calc(2*var(--u))}
+.truck.tr1{left:calc(-60*var(--u))}.truck.tr2{left:calc(50*var(--u))}
+.swheel{top:calc(28*var(--u));width:calc(20*var(--u));height:calc(20*var(--u));border:calc(4*var(--u)) solid #2c2a35;border-radius:50%;
+  background:repeating-conic-gradient(from 0deg,#cfd3dc 0deg 8deg,transparent 8deg 90deg);
+  animation:kSpin calc(.25s / var(--spd)) linear infinite}
+.swheel.s1{left:calc(-65*var(--u))}.swheel.s2{left:calc(45*var(--u))}
+
+/* ---- 电动车 ---- */
+.edeck{left:calc(-44*var(--u));top:calc(28*var(--u));width:calc(112*var(--u));height:calc(7*var(--u));
+  border-radius:calc(4*var(--u));background:#2f4b63;box-shadow:inset 0 calc(2*var(--u)) 0 #23374a}
+.edeck::after{content:"";left:calc(30*var(--u));top:calc(-4*var(--u));width:calc(26*var(--u));height:calc(6*var(--u));
+  border-radius:calc(2*var(--u));background:var(--amber);opacity:.85}
+.ewheel{top:calc(24*var(--u));width:calc(24*var(--u));height:calc(24*var(--u));border:calc(5*var(--u)) solid #23202c;border-radius:50%;
+  background:repeating-conic-gradient(from 0deg,#cfd3dc 0deg 6deg,transparent 6deg 60deg);
+  animation:kSpin calc(.3s / var(--spd)) linear infinite}
+.ewheel.e1{left:calc(-56*var(--u))}.ewheel.e2{left:calc(84*var(--u))}
+.estem{left:calc(88*var(--u));top:calc(25.5*var(--u));width:calc(105*var(--u));transform:rotate(-96.6deg);background:#44536a}
+.ebar{left:calc(58*var(--u));top:calc(-80*var(--u));width:calc(22*var(--u));height:calc(5*var(--u));
+  border-radius:calc(3*var(--u));background:#44536a;transform:rotate(-8deg)}
+.elight{left:calc(84*var(--u));top:calc(-70*var(--u));width:calc(8*var(--u));height:calc(6*var(--u));border-radius:calc(3*var(--u));
+  background:#ffe9a0;box-shadow:0 0 calc(10*var(--u)) calc(3*var(--u)) rgba(255,233,160,.45)}
+
+/* ---- 站姿腿 ---- */
+.veh-skate .leg :is(.thigh,.shin,.foot),
+.veh-escooter .leg :is(.thigh,.shin,.foot){animation:none}
+.veh-skate .leg .thigh{left:calc(6*var(--u));top:calc(-49*var(--u))}
+.veh-skate .leg.ln .thigh{transform:rotate(73.6deg)}
+.veh-skate .leg.ln .shin{transform:rotate(1.5deg)}
+.veh-skate .leg.ln .foot{transform:rotate(-75.1deg)}
+.veh-skate .leg.lf .thigh{transform:rotate(106.4deg)}
+.veh-skate .leg.lf .shin{transform:rotate(2deg)}
+.veh-skate .leg.lf .foot{transform:rotate(-108.4deg)}
+.veh-escooter .leg .thigh{left:calc(-2*var(--u));top:calc(-53*var(--u))}
+.veh-escooter .leg.ln .thigh{transform:rotate(71.6deg)}
+.veh-escooter .leg.ln .shin{transform:rotate(5.2deg)}
+.veh-escooter .leg.ln .foot{transform:rotate(-76.8deg)}
+.veh-escooter .leg.lf .thigh{transform:rotate(105.5deg)}
+.veh-escooter .leg.lf .shin{transform:rotate(-1.5deg)}
+.veh-escooter .leg.lf .foot{transform:rotate(-103.2deg)}
+
+/* ============ 鸟类共用零件 ============ */
+.tail{left:calc(-97*var(--u));top:calc(-112*var(--u));width:calc(40*var(--u));height:calc(26*var(--u));
+  background:#efe6d6;transform-origin:100% 60%;animation:kTail 4s ease-in-out infinite alternate;
+  clip-path:polygon(100% 30%,0 0,36% 42%,4% 62%,42% 64%,18% 100%,100% 74%)}
+.tail::after{content:"";right:0;top:0;width:45%;height:100%;background:#3f3c49;
+  clip-path:polygon(30% 0,100% 0,100% 100%,0 100%);opacity:.85}
+@keyframes kTail{from{transform:rotate(-28deg)}to{transform:rotate(-21deg)}}
+.body{left:calc(-90*var(--u));top:calc(-127*var(--u));width:calc(96*var(--u));height:calc(58*var(--u));
+  border-radius:50%;transform:rotate(-9deg);
+  background:radial-gradient(120% 150% at 68% 18%,#fffdf6 0%,#f3ead9 55%,#d9cbb4 100%)}
+.wing{left:calc(-28*var(--u));top:calc(-105*var(--u));width:calc(104*var(--u));height:calc(26*var(--u));
+  border-radius:calc(14*var(--u)) calc(26*var(--u)) calc(26*var(--u)) calc(10*var(--u));transform-origin:calc(6*var(--u)) 50%;
+  background:linear-gradient(90deg,#f6efdf 52%,#e2d7c2 66%,#3a3742 84%,#23212b 100%);
+  animation:kWing 3.4s ease-in-out infinite alternate;box-shadow:0 calc(3*var(--u)) 0 calc(-1*var(--u)) rgba(0,0,0,.08)}
+.wing::after{content:"";left:calc(56*var(--u));top:calc(7*var(--u));width:calc(34*var(--u));height:calc(2*var(--u));
+  background:rgba(0,0,0,.1);box-shadow:0 calc(6*var(--u)) 0 rgba(0,0,0,.08);border-radius:calc(2*var(--u));transform:rotate(2deg)}
+@keyframes kWing{from{transform:rotate(11.5deg)}to{transform:rotate(15.5deg)}}
+.neckgrp{animation:kBob calc(var(--pedal)/2) ease-in-out infinite alternate}
+@keyframes kBob{from{transform:translateY(0)}to{transform:translateY(calc(-2.4*var(--u)))}}
+.neck{left:calc(-21*var(--u));top:calc(-176*var(--u));width:calc(26*var(--u));height:calc(72*var(--u));
+  border-radius:calc(13*var(--u));transform:rotate(15deg);transform-origin:50% 100%;
+  background:linear-gradient(90deg,#fffdf6,#efe5d2)}
+.head{left:calc(6*var(--u));top:calc(-192*var(--u));width:calc(32*var(--u));height:calc(30*var(--u));
+  border-radius:50% 55% 48% 46%;background:radial-gradient(120% 120% at 60% 25%,#fffdf6,#efe5d2)}
+.head::before{content:"";left:calc(-4*var(--u));top:calc(-3*var(--u));width:calc(12*var(--u));height:calc(12*var(--u));background:#efe5d2;border-radius:50%}
+.eye{left:calc(23*var(--u));top:calc(-183*var(--u));width:calc(5*var(--u));height:calc(5*var(--u));border-radius:50%;background:#26222e}
+.eye::after{content:"";left:calc(1*var(--u));top:calc(.6*var(--u));width:calc(1.6*var(--u));height:calc(1.6*var(--u));border-radius:50%;background:#fff}
+.lid{left:calc(21.5*var(--u));top:calc(-185.5*var(--u));width:calc(8*var(--u));height:calc(8*var(--u));
+  border-radius:50%;background:#f3ead9;transform:scaleY(0);transform-origin:50% 0;animation:kBlink 4.6s infinite}
+@keyframes kBlink{0%,91%,100%{transform:scaleY(0)}94%,96.5%{transform:scaleY(1)}}
+.beak{left:calc(35*var(--u));top:calc(-185*var(--u));width:calc(94*var(--u));height:calc(10*var(--u));
+  transform:rotate(7deg);transform-origin:0 60%;background:linear-gradient(90deg,#f2a13c,#e88a25);
+  clip-path:polygon(0 26%,86% 30%,100% 58%,84% 64%,0 96%);animation:kChomp 2.1s ease-in-out infinite}
+@keyframes kChomp{0%,86%,100%{transform:rotate(7deg)}92%{transform:rotate(9.2deg)}}
+.pouchw{left:calc(34*var(--u));top:calc(-181*var(--u));width:calc(88*var(--u));height:calc(34*var(--u));
+  transform-origin:calc(6*var(--u)) calc(2*var(--u));transition:transform .5s ease}
+.pouch{inset:0;transform-origin:8% 0;background:linear-gradient(180deg,#ef8c2a,#d95f16 82%);
+  border-radius:calc(2*var(--u)) calc(46*var(--u)) calc(46*var(--u)) calc(26*var(--u))/calc(2*var(--u)) calc(30*var(--u)) calc(34*var(--u)) calc(30*var(--u));
+  animation:kPouch 2.6s ease-in-out infinite alternate}
+.pouch::after{content:"";left:calc(20*var(--u));top:calc(9*var(--u));width:calc(40*var(--u));height:calc(6*var(--u));border-radius:50%;background:rgba(255,255,255,.22)}
+.stage:hover .pouchw,.demo:hover .pouchw{transform:scale(1.12) rotate(2deg)}
+@keyframes kPouch{from{transform:rotate(0) scaleY(1)}to{transform:rotate(2.2deg) scaleY(1.04)}}
+
+/* ---- 鹦鹉 ---- */
+.bird-parrot .tail{left:calc(-104*var(--u));top:calc(-104*var(--u));width:calc(60*var(--u));height:calc(22*var(--u));
+  background:linear-gradient(90deg,#d94f35 0 30%,#e8c93c 30% 55%,#2aa5a0 55% 80%,#3f6fb5 80% 100%);
+  clip-path:polygon(100% 30%,0 0,10% 45%,0 100%,100% 70%)}
+.bird-parrot .tail::after{content:none}
+.bird-parrot .body{background:
+  radial-gradient(58% 52% at 66% 64%, #ffd257 0 46%, rgba(255,210,87,0) 47%),
+  radial-gradient(46% 42% at 26% 26%, #2aa5a0 0 42%, rgba(42,165,160,0) 43%),
+  linear-gradient(150deg,#e8503a 0%,#d94f35 55%,#b83c28 100%)}
+.bird-parrot .body::after{content:none}
+.bird-parrot .wing{background:linear-gradient(90deg,#2aa5a0 0 28%,#e8c93c 28% 52%,#d94f35 52% 78%,#3f6fb5 78% 100%)}
+.bird-parrot .neck{left:calc(-6*var(--u));top:calc(-160*var(--u));width:calc(24*var(--u));height:calc(48*var(--u));
+  transform:rotate(12deg);background:linear-gradient(90deg,#4fb573,#2e8f5b)}
+.bird-parrot .head{left:calc(8*var(--u));top:calc(-178*var(--u));width:calc(30*var(--u));height:calc(28*var(--u));
+  background:radial-gradient(120% 120% at 55% 25%,#4fb573,#2e8f5b)}
+.bird-parrot .head::before{left:calc(14*var(--u));top:calc(8*var(--u));width:calc(14*var(--u));height:calc(14*var(--u));
+  background:#f7e6a8;border-radius:50%}
+.bird-parrot .eye{left:calc(18*var(--u));top:calc(9*var(--u))}
+.bird-parrot .lid{left:calc(16.5*var(--u));top:calc(6.5*var(--u));background:#2e8f5b}
+.bird-parrot .beak{left:calc(26*var(--u));top:calc(11*var(--u));width:calc(18*var(--u));height:calc(16*var(--u));
+  transform:rotate(4deg);animation:none;background:linear-gradient(180deg,#e2543a,#b83c28);
+  border-radius:40% 60% 70% 30%/45% 55% 65% 35%;clip-path:polygon(0 0,100% 12%,86% 58%,48% 100%,22% 62%,0 34%)}
+.pcrest{left:calc(10*var(--u));top:calc(-8*var(--u));width:calc(16*var(--u));height:calc(10*var(--u));
+  background:#e8b13c;clip-path:polygon(0 100%,28% 0,52% 68%,74% 6%,100% 100%)}
+
+/* ---- 猫头鹰 ---- */
+.bird-owl .tail{width:calc(30*var(--u));height:calc(22*var(--u));background:#5d3f28;
+  clip-path:polygon(100% 25%,0 0,0 100%,100% 75%);animation-duration:5s}
+.bird-owl .tail::after{content:none}
+.bird-owl .body{width:calc(92*var(--u));height:calc(64*var(--u));transform:rotate(-4deg);
+  background:radial-gradient(120% 150% at 60% 20%,#8a6242,#6b4a30 70%)}
+.bird-owl .body::after{content:"";left:26%;top:34%;width:52%;height:58%;border-radius:50%;opacity:.85;
+  background:repeating-linear-gradient(180deg,rgba(244,231,200,.8) 0 calc(3*var(--u)),rgba(244,231,200,0) calc(3*var(--u)) calc(8*var(--u)))}
+.bird-owl .wing{background:linear-gradient(90deg,#7a5638 60%,#5d3f28 85%,#3e2a1b 100%);
+  border-radius:50% 40% 40% 50%/60% 60% 40% 40%}
+.bird-owl .head{left:calc(-4*var(--u));top:calc(-172*var(--u));width:calc(46*var(--u));height:calc(42*var(--u));
+  border-radius:50%;background:radial-gradient(120% 120% at 50% 30%,#8a6242,#6b4a30)}
+.bird-owl .head::before{content:none}
+.eft{top:calc(-10*var(--u));width:calc(12*var(--u));height:calc(14*var(--u));background:#5d3f28;
+  clip-path:polygon(0 100%,50% 0,100% 100%)}
+.eft.el{left:calc(2*var(--u));transform:rotate(-18deg)}
+.eft.er{left:calc(32*var(--u));transform:rotate(18deg)}
+.oeye{top:calc(8*var(--u));width:calc(13*var(--u));height:calc(13*var(--u));border-radius:50%;background:#f6ecd4}
+.oeye.ol{left:calc(6*var(--u))}
+.oeye.or{left:calc(27*var(--u))}
+.oeye::after{content:"";left:calc(3.5*var(--u));top:calc(3.5*var(--u));width:calc(6*var(--u));height:calc(6*var(--u));border-radius:50%;background:#26222e}
+.olid{inset:0;border-radius:50%;background:#6b4a30;transform:scaleY(0);transform-origin:50% 0;animation:kBlink 5.2s infinite}
+.obeak{left:calc(19*var(--u));top:calc(20*var(--u));width:calc(9*var(--u));height:calc(9*var(--u));
+  background:#e8a13c;transform:rotate(45deg);border-radius:22%}
+
+/* 车铃 + 车筐 + 鱼 */
+.bell{left:calc(52*var(--u));top:calc(-92*var(--u));width:calc(10*var(--u));height:calc(8*var(--u));
+  border-radius:50% 50% 20% 20%;background:radial-gradient(circle at 35% 30%,#ffe08a,#d8a11c);
+  transform-origin:50% 100%;animation:kRing 7s infinite}
+@keyframes kRing{0%,86%,96%,100%{transform:rotate(0)}88%{transform:rotate(-18deg)}90%{transform:rotate(14deg)}92%{transform:rotate(-10deg)}94%{transform:rotate(6deg)}}
+.grip{left:calc(76*var(--u));top:calc(-90*var(--u));width:calc(8*var(--u));height:calc(8*var(--u));border-radius:50%;background:#5b4232}
+.basket{left:calc(74*var(--u));top:calc(-72*var(--u));width:calc(34*var(--u));height:calc(24*var(--u));
+  background:#c58a4c;border:calc(2.5*var(--u)) solid #9a6a33;border-radius:calc(3*var(--u)) calc(3*var(--u)) calc(8*var(--u)) calc(8*var(--u));
+  background-image:repeating-linear-gradient(180deg,rgba(0,0,0,.16) 0 calc(2*var(--u)),transparent calc(2*var(--u)) calc(6*var(--u))),
+    repeating-linear-gradient(90deg,rgba(0,0,0,.1) 0 calc(2*var(--u)),transparent calc(2*var(--u)) calc(8*var(--u)))}
+.fish{width:calc(12*var(--u));height:calc(9*var(--u));background:#7fb4c9;transform-origin:50% 100%;
+  clip-path:polygon(0 55%,55% 0,100% 30%,78% 55%,100% 80%,55% 100%);
+  animation:kFish 1.9s ease-in-out infinite alternate}
+.fish.f1{left:calc(78*var(--u));top:calc(-80*var(--u));transform:rotate(-14deg)}
+.fish.f2{left:calc(90*var(--u));top:calc(-79*var(--u));background:#6ba3b8;animation-delay:-.9s;transform:rotate(12deg)}
+@keyframes kFish{from{transform:rotate(-16deg)}to{transform:rotate(10deg)}}
+
+.zip{height:calc(3*var(--u));border-radius:calc(2*var(--u));background:rgba(255,255,255,.85);
+  opacity:calc((var(--spd) - 1.3) * 1.3);animation:kZip .55s linear infinite}
+.zip.z1{left:calc(-262*var(--u));top:calc(-104*var(--u));width:calc(58*var(--u))}
+.zip.z2{left:calc(-242*var(--u));top:calc(-58*var(--u));width:calc(44*var(--u));animation-delay:-.2s}
+.zip.z3{left:calc(-268*var(--u));top:calc(-12*var(--u));width:calc(50*var(--u));animation-delay:-.38s}
+@keyframes kZip{from{transform:translateX(calc(30*var(--u)));opacity:0}25%{opacity:.8}to{transform:translateX(calc(-90*var(--u)));opacity:0}}
+
+/* ============ 前景草丛 ============ */
+.fg{left:0;bottom:0;width:calc(1000*var(--u));height:0;animation:kFg var(--fgT) linear infinite;filter:blur(.6px)}
+.fgroup{left:0;width:calc(500*var(--u));height:0}
+.fgroup + .fgroup{left:calc(500*var(--u))}
+@keyframes kFg{to{transform:translateX(calc(-500*var(--u)))}}
+.tuft{bottom:calc(-2*var(--u));width:calc(30*var(--u));height:calc(22*var(--u));background:var(--fg);transition:background .9s;
+  clip-path:polygon(0 100%,8% 26%,18% 100%,30% 0,44% 100%,55% 22%,66% 100%,80% 12%,90% 100%,100% 46%,100% 100%)}
+.tuft.fl::after{content:"";left:calc(12*var(--u));top:calc(-4*var(--u));width:calc(6*var(--u));height:calc(6*var(--u));border-radius:50%;background:#e78bb0}
+
+/* ============ 雨天 ============ */
+.storm{inset:0;background:linear-gradient(180deg,rgba(36,44,72,.42),rgba(24,28,48,.5));
+  opacity:var(--stormO);transition:opacity .9s}
+.puddles{inset:0;opacity:var(--puddleO);transition:opacity .9s}
+.pd{border-radius:50%;
+  background:radial-gradient(closest-side,rgba(150,190,235,.5),rgba(150,190,235,.15) 70%,transparent)}
+.pd::after{content:"";inset:18%;border:calc(1.5*var(--u)) solid rgba(225,240,255,.55);border-radius:50%;
+  animation:kRip 1.8s ease-out infinite}
+.pd.p1{left:calc(180*var(--u));top:calc(542*var(--u));width:calc(90*var(--u));height:calc(11*var(--u))}
+.pd.p2{left:calc(500*var(--u));top:calc(562*var(--u));width:calc(120*var(--u));height:calc(13*var(--u))}
+.pd.p2::after{animation-delay:-.7s}
+.pd.p3{left:calc(790*var(--u));top:calc(536*var(--u));width:calc(80*var(--u));height:calc(9*var(--u))}
+.pd.p3::after{animation-delay:-1.2s}
+@keyframes kRip{from{transform:scale(.25);opacity:.9}to{transform:scale(1);opacity:0}}
+.rainw{inset:0;opacity:var(--rainO);transition:opacity .9s}
+.rain{inset:calc(-40*var(--u));
+  background-image:
+    radial-gradient(calc(2.6*var(--u)) calc(18*var(--u)) at 30% 18%, rgba(214,234,255,.92) 96%, transparent),
+    radial-gradient(calc(2.6*var(--u)) calc(18*var(--u)) at 74% 64%, rgba(214,234,255,.92) 96%, transparent);
+  background-size:calc(80*var(--u)) calc(160*var(--u));
+  animation:kRain .5s linear infinite}
+.rain.r2{
+  background-image:
+    radial-gradient(calc(2*var(--u)) calc(12*var(--u)) at 52% 40%, rgba(170,200,240,.55) 96%, transparent),
+    radial-gradient(calc(2*var(--u)) calc(12*var(--u)) at 12% 86%, rgba(170,200,240,.55) 96%, transparent);
+  background-size:calc(120*var(--u)) calc(220*var(--u));
+  animation:kRain2 .42s linear infinite}
+@keyframes kRain{to{background-position:0 calc(320*var(--u))}}
+@keyframes kRain2{to{background-position:0 calc(440*var(--u))}}
+.flash{inset:0;opacity:0;animation:kFlash 7s infinite;
+  background:radial-gradient(120% 90% at 70% 0%,rgba(255,255,255,.9),rgba(255,255,255,0) 60%)}
+@keyframes kFlash{0%,86%,90%,100%{opacity:0}87%,89%{opacity:.5}88%{opacity:.12}}
+
+/* ============ 彩蛋：14 次点击计数 ============ */
+.clk{left:calc(352*var(--u));top:calc(258*var(--u));width:calc(216*var(--u));height:calc(168*var(--u));
+  z-index:25;cursor:pointer;pointer-events:none}
+.clk.c1{pointer-events:auto}
+#e1:checked ~ .stagewrap .c1{pointer-events:none}   #e1:checked ~ .stagewrap .c2{pointer-events:auto}
+#e2:checked ~ .stagewrap .c2{pointer-events:none}   #e2:checked ~ .stagewrap .c3{pointer-events:auto}
+#e3:checked ~ .stagewrap .c3{pointer-events:none}   #e3:checked ~ .stagewrap .c4{pointer-events:auto}
+#e4:checked ~ .stagewrap .c4{pointer-events:none}   #e4:checked ~ .stagewrap .c5{pointer-events:auto}
+#e5:checked ~ .stagewrap .c5{pointer-events:none}   #e5:checked ~ .stagewrap .c6{pointer-events:auto}
+#e6:checked ~ .stagewrap .c6{pointer-events:none}   #e6:checked ~ .stagewrap .c7{pointer-events:auto}
+#e7:checked ~ .stagewrap .c7{pointer-events:none}   #e7:checked ~ .stagewrap .c8{pointer-events:auto}
+#e8:checked ~ .stagewrap .c8{pointer-events:none}   #e8:checked ~ .stagewrap .c9{pointer-events:auto}
+#e9:checked ~ .stagewrap .c9{pointer-events:none}   #e9:checked ~ .stagewrap .c10{pointer-events:auto}
+#e10:checked ~ .stagewrap .c10{pointer-events:none} #e10:checked ~ .stagewrap .c11{pointer-events:auto}
+#e11:checked ~ .stagewrap .c11{pointer-events:none} #e11:checked ~ .stagewrap .c12{pointer-events:auto}
+#e12:checked ~ .stagewrap .c12{pointer-events:none} #e12:checked ~ .stagewrap .c13{pointer-events:auto}
+#e13:checked ~ .stagewrap .c13{pointer-events:none} #e13:checked ~ .stagewrap .c14{pointer-events:auto}
+#e14:checked ~ .stagewrap .c14{pointer-events:none}
+/* 仅限 鹈鹕 × 自行车 */
+#bd-parrot:checked ~ .stagewrap .clk,
+#bd-owl:checked ~ .stagewrap .clk,
+#vh-skate:checked ~ .stagewrap .clk,
+#vh-escooter:checked ~ .stagewrap .clk,
+#egg:checked ~ .stagewrap .clk{pointer-events:none}
+/* 点击时鹈鹕轻微squash反馈 */
+.clk:active ~ .rig .rider{scale:.97 .95}
+/* 计数进度点 */
+.eggprog{right:calc(18*var(--u));top:calc(16*var(--u));width:calc(150*var(--u));height:calc(8*var(--u));
+  display:flex;gap:calc(4*var(--u));opacity:0;transition:opacity .4s;z-index:24}
+.eggprog i{width:calc(7*var(--u));height:calc(7*var(--u));border-radius:50%;
+  background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.38);transition:background .2s,transform .2s}
+#e1:checked ~ .stagewrap .eggprog{opacity:1}
+#e1:checked ~ .stagewrap .eggprog i:nth-child(1),
+#e2:checked ~ .stagewrap .eggprog i:nth-child(2),
+#e3:checked ~ .stagewrap .eggprog i:nth-child(3),
+#e4:checked ~ .stagewrap .eggprog i:nth-child(4),
+#e5:checked ~ .stagewrap .eggprog i:nth-child(5),
+#e6:checked ~ .stagewrap .eggprog i:nth-child(6),
+#e7:checked ~ .stagewrap .eggprog i:nth-child(7),
+#e8:checked ~ .stagewrap .eggprog i:nth-child(8),
+#e9:checked ~ .stagewrap .eggprog i:nth-child(9),
+#e10:checked ~ .stagewrap .eggprog i:nth-child(10),
+#e11:checked ~ .stagewrap .eggprog i:nth-child(11),
+#e12:checked ~ .stagewrap .eggprog i:nth-child(12),
+#e13:checked ~ .stagewrap .eggprog i:nth-child(13),
+#e14:checked ~ .stagewrap .eggprog i:nth-child(14){background:var(--amber);transform:scale(1.25)}
+/* 神秘按钮 */
+.eggbtn{left:50%;top:50%;transform:translate(-50%,-50%);z-index:26;opacity:0;scale:.86;pointer-events:none;
+  transition:opacity .9s ease, scale .9s ease;cursor:pointer;
+  font-family:var(--disp);font-size:2.1cqw;color:#2b2140;background:rgba(255,255,255,.94);
+  padding:.75em 1.5em;border-radius:999px;border:2px dashed #7a68a8;
+  animation:kEggPulse 2.4s ease-in-out infinite alternate}
+@keyframes kEggPulse{from{box-shadow:0 0 0 0 rgba(255,255,255,.0)}to{box-shadow:0 0 calc(26*var(--u)) calc(6*var(--u)) rgba(255,255,255,.55)}}
+#e14:checked ~ .stagewrap .eggbtn{opacity:1;scale:1;pointer-events:auto}
+#bd-parrot:checked ~ .stagewrap .eggbtn,
+#bd-owl:checked ~ .stagewrap .eggbtn,
+#vh-skate:checked ~ .stagewrap .eggbtn,
+#vh-escooter:checked ~ .stagewrap .eggbtn,
+#egg:checked ~ .stagewrap .eggbtn{display:none}
+/* 白幕过场 */
+.whiteout{inset:0;background:#fff;opacity:0;pointer-events:none;z-index:30}
+#egg:checked ~ .stagewrap .whiteout{animation:kWhite 7.5s ease both}
+@keyframes kWhite{0%{opacity:0}16%{opacity:1}62%{opacity:1}100%{opacity:0}}
+/* 返回按钮 */
+.eggback{right:calc(16*var(--u));bottom:calc(14*var(--u));z-index:31;display:none;cursor:pointer;
+  font-family:var(--mono);font-size:1.3cqw;color:#3a2c1c;background:rgba(255,255,255,.9);
+  padding:.5em 1em;border-radius:999px;border:1px solid rgba(0,0,0,.25)}
+#egg:checked ~ .stagewrap .eggback{display:block;animation:kFadeIn .8s 6.9s both}
+@keyframes kFadeIn{from{opacity:0}to{opacity:1}}
+
+/* ============ 彩蛋场景：自行车骑鹈鹕 ============ */
+.invert{left:calc(450*var(--u));top:calc(482*var(--u));width:0;height:0;display:none}
+#egg:checked ~ .stagewrap :is(.veh-bike,.veh-skate,.veh-escooter,.bird-pelican,.bird-parrot,.bird-owl,.bike-extra){display:none}
+#egg:checked ~ .stagewrap .invert{display:block}
+.invert .shadow{left:calc(-150*var(--u));width:calc(300*var(--u))}
+.hopgrp{left:0;top:0;width:0;height:0;animation:kHop calc(var(--pedal)/2) ease-in-out infinite alternate}
+@keyframes kHop{from{transform:translateY(0)}to{transform:translateY(calc(-7*var(--u)))}}
+.bigbird{left:0;top:0;width:0;height:0;transform:scale(1.55);
+  transform-origin:calc(-42*var(--u)) calc(-98*var(--u))}
+.minibike{left:calc(-26*var(--u));top:calc(-178*var(--u));transform:scale(.8) rotate(-7deg)}
+.invert .leg .thigh{left:calc(-26*var(--u));top:calc(-40*var(--u))}
+
+/* ============ 标题 / 胶带 ============ */
+.stage::before,.stage::after{content:"";z-index:9;width:calc(96*var(--u));height:calc(26*var(--u));opacity:.9;
+  background:rgba(255,226,142,.75);box-shadow:0 calc(2*var(--u)) calc(6*var(--u)) rgba(0,0,0,.15)}
+.stage::before{left:calc(-24*var(--u));top:calc(-8*var(--u));transform:rotate(-40deg)}
+.stage::after{right:calc(-24*var(--u));top:calc(-8*var(--u));transform:rotate(40deg)}
+.brand{position:absolute;left:4.2%;top:5.5%;z-index:8;transform:rotate(-1.6deg);width:max-content;max-width:70%}
+.brand *{position:static}
+.brand .eyebrow{font-family:var(--mono);font-size:1.15cqw;letter-spacing:.28em;color:#3a2c1c;
+  background:var(--amber);display:inline-block;padding:.5em .9em;border-radius:3px;box-shadow:2px 3px 0 rgba(30,20,10,.35)}
+.brand h1{font-family:var(--disp);font-weight:400;font-size:7.4cqw;line-height:1.05;margin:.18em 0 .1em;
+  color:#fffdf4;text-shadow:.045em .055em 0 #33254d, .1em .12em 0 rgba(30,20,50,.25)}
+.brand p{font-size:1.55cqw;font-weight:700;color:#fffdf4;letter-spacing:.08em;
+  text-shadow:0 1px 4px rgba(40,25,50,.6)}
+
+/* ============ 控制台 ============ */
+.controls{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;
+  background:var(--panel);border:1px solid rgba(255,255,255,.07);border-top:0;
+  border-radius:0 0 14px 14px;padding:14px 18px;margin-top:-6px}
+.cg{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cg > span{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--dim)}
+.controls label{font-size:13.5px;font-weight:700;color:#cbbfd9;background:#2c2440;cursor:pointer;
+  padding:7px 13px;border-radius:999px;border:1px solid rgba(255,255,255,.08);
+  transition:all .22s ease;user-select:none}
+.controls label:hover{transform:translateY(-2px);background:#372d50;color:#fff}
+#th-day:checked ~ .stagewrap label[for="th-day"],
+#th-dusk:checked ~ .stagewrap label[for="th-dusk"],
+#th-night:checked ~ .stagewrap label[for="th-night"],
+#sp-stroll:checked ~ .stagewrap label[for="sp-stroll"],
+#sp-cruise:checked ~ .stagewrap label[for="sp-cruise"],
+#sp-rush:checked ~ .stagewrap label[for="sp-rush"],
+#bd-pelican:checked ~ .stagewrap label[for="bd-pelican"],
+#bd-parrot:checked ~ .stagewrap label[for="bd-parrot"],
+#bd-owl:checked ~ .stagewrap label[for="bd-owl"],
+#vh-bike:checked ~ .stagewrap label[for="vh-bike"],
+#vh-skate:checked ~ .stagewrap label[for="vh-skate"],
+#vh-escooter:checked ~ .stagewrap label[for="vh-escooter"],
+#wx-sun:checked ~ .stagewrap label[for="wx-sun"],
+#wx-rain:checked ~ .stagewrap label[for="wx-rain"],
+#hold:checked ~ .stagewrap label[for="hold"]{
+  background:var(--amber);color:#241a06;border-color:#b98f1e;
+  box-shadow:0 4px 12px -4px rgba(255,210,87,.55);transform:translateY(-1px)}
+#hold:checked ~ .stagewrap label[for="hold"] .t1{display:none}
+#hold:not(:checked) ~ .stagewrap label[for="hold"] .t2{display:none}
+input:focus-visible ~ .stagewrap .controls{outline:2px dashed var(--amber);outline-offset:4px}
+.hint{font-family:var(--mono);font-size:11.5px;color:var(--dim);margin:12px 4px 0;letter-spacing:.05em}
+
+/* ============ （4）维修手册折叠 ============ */
+.labbtn{display:flex;justify-content:center;margin:46px 0 0}
+.labbtn label{cursor:pointer;user-select:none;font-family:var(--disp);font-size:19px;letter-spacing:.06em;
+  color:var(--amber);background:rgba(255,210,87,.08);border:2px dashed rgba(255,210,87,.55);
+  padding:12px 30px;border-radius:999px;transition:all .25s ease}
+.labbtn label:hover{transform:translateY(-3px);background:rgba(255,210,87,.16);box-shadow:0 10px 24px -12px rgba(255,210,87,.5)}
+#lab-show:checked ~ .labbtn label{background:var(--amber);color:#241a06;border-style:solid;border-color:#b98f1e}
+#lab-show:checked ~ .labbtn label .t1{display:none}
+#lab-show:not(:checked) ~ .labbtn label .t2{display:none}
+.labwrap{display:grid;grid-template-rows:0fr;opacity:0;
+  transition:grid-template-rows .8s cubic-bezier(.2,.7,.2,1), opacity .55s ease}
+#lab-show:checked ~ .labwrap{grid-template-rows:1fr;opacity:1}
+.labinner{overflow:hidden;min-height:0}
+
+/* ============ 拆解 · 蓝图板 ============ */
+.lab{margin:56px 0 0}
+.lab-head{max-width:760px}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.32em;color:var(--teal)}
+.lab h2{font-family:var(--disp);font-weight:400;font-size:clamp(30px,4.6vw,52px);margin:10px 0 12px;line-height:1.15}
+.lab .lead{color:var(--dim);font-size:15.5px;line-height:1.9}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 30px}
+.badges span{font-family:var(--mono);font-size:11.5px;color:var(--amber);
+  border:1px solid rgba(255,210,87,.4);padding:5px 11px;border-radius:999px;letter-spacing:.08em}
+.board{border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:26px;
+  background:
+   linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px) 0 0/26px 26px,
+   linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px) 0 0/26px 26px,
+   #17355c}
+.lab-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:20px}
+.col{display:flex;flex-direction:column;gap:20px}
+.card{background:rgba(9,20,38,.55);border:1px dashed rgba(190,220,255,.35);border-radius:8px;
+  padding:20px;transition:transform .3s ease,border-color .3s ease}
+.card:hover{transform:translateY(-4px);border-color:rgba(255,210,87,.6)}
+.card h3{font-size:16.5px;font-weight:900;display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.card h3 .no{flex:none;width:24px;height:24px;border-radius:50%;background:var(--amber);color:#241a06;
+  font-family:var(--mono);font-size:13px;display:grid;place-items:center;font-weight:700}
+.card p{font-size:13.5px;line-height:1.9;color:#bcd0e8}
+.chip{display:inline-block;margin-top:12px;font-family:var(--mono);font-size:11px;color:#9fd0ff;
+  background:#0d1e33;border:1px solid rgba(159,208,255,.3);border-radius:5px;padding:6px 10px}
+.demo{container-type:inline-size;position:relative;height:190px;border-radius:6px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),transparent 45%),#0e2140;
+  border:1px solid rgba(190,220,255,.2);margin-bottom:14px}
+.demo .dscene{--u:1px;position:absolute;inset:0}
+.demo .dscene *{position:absolute}
+@supports (width:1cqw){
+  #demo-leg .dscene,#demo-wheel .dscene{--u:.42cqw}
+  #demo-belt .dscene{--u:.3cqw}
+  #demo-face .dscene{--u:.55cqw}
+}
+#demo-leg .anchor{left:50%;top:66%;width:0;height:0}
+#demo-leg .orbit{left:calc(-26*var(--u));top:calc(-26*var(--u));width:calc(52*var(--u));height:calc(52*var(--u));
+  border:calc(1.4*var(--u)) dashed rgba(159,208,255,.5);border-radius:50%}
+#demo-leg .floor{left:calc(-70*var(--u));top:calc(33*var(--u));width:calc(140*var(--u));height:calc(2*var(--u));background:rgba(159,208,255,.35)}
+#demo-wheel .anchor{left:50%;top:52%;width:0;height:0}
+#demo-wheel .wheel{left:calc(-36*var(--u));top:calc(-36*var(--u));width:calc(72*var(--u));height:calc(72*var(--u));border-width:calc(6*var(--u));animation-duration:2.2s}
+#demo-belt .dground{left:0;right:0;bottom:26px;height:2px;background:rgba(159,220,255,.35)}
+#demo-belt .belt{top:auto;bottom:27px;left:0;width:calc(666*var(--u));animation:kMiniBelt 6s linear infinite}
+#demo-belt .bgroup{width:calc(333*var(--u))}
+#demo-belt .bgroup + .bgroup{left:calc(333*var(--u))}
+@keyframes kMiniBelt{to{transform:translateX(calc(-333*var(--u)))}}
+#demo-face .anchor{left:24%;top:78%;width:0;height:0;transform:scale(1.15)}
+table.ik{width:100%;border-collapse:collapse;margin-top:14px;font-family:var(--mono);font-size:11.5px;color:#cfe0f2}
+table.ik th,table.ik td{padding:5px 8px;text-align:left;border-bottom:1px solid rgba(190,220,255,.15)}
+table.ik th{color:var(--amber);font-weight:400;letter-spacing:.1em}
+table.ik td:first-child{color:#8fa8c6}
+
+@supports (animation-timeline: view()){
+  .reveal{animation:rise .8s both;animation-timeline:view();animation-range:entry 5% entry 42%}
+  @keyframes rise{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+}
+
+/* ============ 跑马灯 / 页脚 ============ */
+.ticker{margin:80px 0 0;border-block:3px solid #0f0c16;background:var(--amber);color:#241a06;overflow:hidden}
+.tk{display:flex;width:max-content;font-family:var(--disp);font-size:20px;padding:10px 0;animation:kTick 26s linear infinite}
+.ticker:hover .tk{animation-play-state:paused}
+.tk span{white-space:nowrap;padding-right:2.2em}
+@keyframes kTick{to{transform:translateX(-50%)}}
+footer{text-align:center;padding:30px 16px 40px;font-family:var(--mono);font-size:11.5px;color:#7d7290;letter-spacing:.08em}
+
+@media (max-width:760px){
+  .lab-grid{grid-template-columns:1fr}
+  .controls{gap:10px 14px}
+  .brand h1{font-size:9cqw}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none !important}
+}
+</style>
+</head>
+<body>
+<main class="page">
+
+  <input class="vh" type="radio" name="theme" id="th-day">
+  <input class="vh" type="radio" name="theme" id="th-dusk" checked>
+  <input class="vh" type="radio" name="theme" id="th-night">
+  <input class="vh" type="radio" name="speed" id="sp-stroll">
+  <input class="vh" type="radio" name="speed" id="sp-cruise" checked>
+  <input class="vh" type="radio" name="speed" id="sp-rush">
+  <input class="vh" type="radio" name="bird" id="bd-pelican" checked>
+  <input class="vh" type="radio" name="bird" id="bd-parrot">
+  <input class="vh" type="radio" name="bird" id="bd-owl">
+  <input class="vh" type="radio" name="veh" id="vh-bike" checked>
+  <input class="vh" type="radio" name="veh" id="vh-skate">
+  <input class="vh" type="radio" name="veh" id="vh-escooter">
+  <input class="vh" type="radio" name="wx" id="wx-sun" checked>
+  <input class="vh" type="radio" name="wx" id="wx-rain">
+  <input class="vh" type="checkbox" id="hold">
+  <input class="vh" type="checkbox" id="lab-show">
+  <!-- 彩蛋计数 1~14 与 世界线开关 -->
+  <input class="vh" type="checkbox" id="e1"><input class="vh" type="checkbox" id="e2">
+  <input class="vh" type="checkbox" id="e3"><input class="vh" type="checkbox" id="e4">
+  <input class="vh" type="checkbox" id="e5"><input class="vh" type="checkbox" id="e6">
+  <input class="vh" type="checkbox" id="e7"><input class="vh" type="checkbox" id="e8">
+  <input class="vh" type="checkbox" id="e9"><input class="vh" type="checkbox" id="e10">
+  <input class="vh" type="checkbox" id="e11"><input class="vh" type="checkbox" id="e12">
+  <input class="vh" type="checkbox" id="e13"><input class="vh" type="checkbox" id="e14">
+  <input class="vh" type="checkbox" id="egg">
+
+  <div class="stagewrap">
+    <figure class="stage" aria-label="海鸟骑车的 CSS 动画">
+
+      <div class="sky day"></div><div class="sky dusk"></div><div class="sky night"></div>
+      <div class="stars"></div>
+      <i class="tw t1"></i><i class="tw t2"></i><i class="tw t3"></i>
+      <div class="sun"><i class="rays"></i></div>
+      <div class="moon"></div>
+
+      <i class="cloud c1"></i><i class="cloud c2"></i><i class="cloud c3"></i>
+      <div class="island"></div>
+      <div class="boat"><i class="mast"></i><i class="sail"></i><i class="hull"></i></div>
+      <div class="birds"><i class="db b1"></i><i class="db b2"></i><i class="db b3"></i></div>
+
+      <div class="sea day"></div><div class="sea dusk"></div><div class="sea night"></div>
+      <div class="glitter"></div>
+      <i class="wrow w1"></i><i class="wrow w2"></i><i class="wrow w3"></i><i class="wrow w4"></i>
+
+      <div class="beach"></div>
+      <div class="belt">
+        <div class="bgroup">
+          <i class="it lamp" style="left:calc(60*var(--u))"></i>
+          <i class="it bush" style="left:calc(150*var(--u))"></i>
+          <i class="it bench" style="left:calc(300*var(--u))"></i>
+          <i class="it sign" style="left:calc(452*var(--u))"></i>
+          <i class="it buoy" style="left:calc(520*var(--u))"></i>
+          <i class="it bush" style="left:calc(586*var(--u))"></i>
+          <i class="it lamp" style="left:calc(700*var(--u))"></i>
+          <i class="it rock" style="left:calc(788*var(--u))"></i>
+          <i class="it bush" style="left:calc(866*var(--u))"></i>
+        </div>
+        <div class="bgroup" aria-hidden="true">
+          <i class="it lamp" style="left:calc(60*var(--u))"></i>
+          <i class="it bush" style="left:calc(150*var(--u))"></i>
+          <i class="it bench" style="left:calc(300*var(--u))"></i>
+          <i class="it sign" style="left:calc(452*var(--u))"></i>
+          <i class="it buoy" style="left:calc(520*var(--u))"></i>
+          <i class="it bush" style="left:calc(586*var(--u))"></i>
+          <i class="it lamp" style="left:calc(700*var(--u))"></i>
+          <i class="it rock" style="left:calc(788*var(--u))"></i>
+          <i class="it bush" style="left:calc(866*var(--u))"></i>
+        </div>
+      </div>
+
+      <div class="sidewalk"></div>
+      <div class="roadbed"></div>
+      <div class="lane"></div>
+
+      <!-- 14 层点击靶（置于 rig 之前，可用 :active ~ 做按压反馈） -->
+      <label class="clk c1" for="e1"></label><label class="clk c2" for="e2"></label>
+      <label class="clk c3" for="e3"></label><label class="clk c4" for="e4"></label>
+      <label class="clk c5" for="e5"></label><label class="clk c6" for="e6"></label>
+      <label class="clk c7" for="e7"></label><label class="clk c8" for="e8"></label>
+      <label class="clk c9" for="e9"></label><label class="clk c10" for="e10"></label>
+      <label class="clk c11" for="e11"></label><label class="clk c12" for="e12"></label>
+      <label class="clk c13" for="e13"></label><label class="clk c14" for="e14"></label>
+
+      <div class="rig">
+        <div class="shadow"></div>
+
+        <div class="veh-bike">
+          <div class="wheel rear"><i class="cog"></i></div>
+          <div class="wheel front"></div>
+          <div class="fender fr"></div><div class="fender ff"></div>
+          <div class="leg far"><div class="thigh"><div class="shin"><div class="foot"></div></div></div></div>
+          <div class="crankF"><i class="arm af"></i><div class="pwrap pf"><i class="pedal"></i></div></div>
+          <i class="bar chainT"></i><i class="bar chainB"></i>
+          <i class="bar chainstay"></i><i class="bar seatstay"></i><i class="bar seattube"></i>
+          <i class="bar toptube"></i><i class="bar downtube"></i><i class="bar headtube"></i>
+          <i class="bar fork"></i><i class="bar stem"></i><i class="bar hbar"></i>
+          <i class="bar seatpost"></i><i class="saddle"></i>
+          <div class="crankN"><i class="ring"></i><i class="arm an"></i><i class="cap"></i>
+            <div class="pwrap pn"><i class="pedal"></i></div></div>
+          <div class="leg near"><div class="thigh"><div class="shin"><div class="foot"></div></div></div></div>
+          <i class="grip"></i>
+        </div>
+
+        <div class="veh-skate">
+          <i class="swheel s1"></i><i class="swheel s2"></i>
+          <i class="truck tr1"></i><i class="truck tr2"></i>
+          <i class="sdeck"></i>
+          <div class="leg lf"><div class="thigh"><div class="shin"><div class="foot"></div></div></div></div>
+          <div class="leg ln"><div class="thigh"><div class="shin"><div class="foot"></div></div></div></div>
+        </div>
+
+        <div class="veh-escooter">
+          <i class="ewheel e1w"></i><i class="ewheel e2w"></i>
+          <i class="edeck"></i>
+          <i class="bar estem"></i><i class="ebar"></i><i class="elight"></i>
+          <div class="leg lf"><div class="thigh"><div class="shin"><div class="foot"></div></div></div></div>
+          <div class="leg ln"><div class="thigh"><div class="shin"><div class="foot"></div></div></div></div>
+        </div>
+
+        <div class="rider">
+          <div class="birdx bird-pelican">
+            <i class="tail"></i><i class="body"></i>
+            <div class="neckgrp">
+              <i class="neck"></i><i class="head"></i>
+              <div class="pouchw"><i class="pouch"></i></div>
+              <i class="beak"></i><i class="eye"></i><i class="lid"></i>
+            </div>
+            <i class="wing"></i>
+          </div>
+          <div class="birdx bird-parrot">
+            <i class="tail"></i><i class="body"></i>
+            <div class="neckgrp">
+              <i class="neck"></i>
+              <i class="head"><i class="pcrest"></i><i class="eye"></i><i class="lid"></i><i class="beak"></i></i>
+            </div>
+            <i class="wing"></i>
+          </div>
+          <div class="birdx bird-owl">
+            <i class="tail"></i><i class="body"></i>
+            <div class="neckgrp">
+              <i class="head">
+                <i class="eft el"></i><i class="eft er"></i>
+                <i class="oeye ol"><i class="olid"></i></i>
+                <i class="oeye or"><i class="olid"></i></i>
+                <i class="obeak"></i>
+              </i>
+            </div>
+            <i class="wing"></i>
+          </div>
+        </div>
+
+        <div class="bike-extra">
+          <i class="bell"></i><i class="basket"></i><i class="fish f1"></i><i class="fish f2"></i>
+        </div>
+
+        <i class="zip z1"></i><i class="zip z2"></i><i class="zip z3"></i>
+      </div>
+
+      <!-- 彩蛋场景：自行车骑鹈鹕 -->
+      <div class="invert">
+        <div class="shadow"></div>
+        <div class="leg far"><div class="thigh"><div class="shin"><div class="foot"></div></div></div></div>
+        <div class="hopgrp">
+          <div class="bigbird">
+            <i class="tail"></i><i class="body"></i>
+            <div class="neckgrp">
+              <i class="neck"></i><i class="head"></i>
+              <div class="pouchw"><i class="pouch"></i></div>
+              <i class="beak"></i><i class="eye"></i><i class="lid"></i>
+            </div>
+            <i class="wing"></i>
+          </div>
+          <div class="minibike">
+            <div class="wheel rear"></div><div class="wheel front"></div>
+            <i class="bar chainstay"></i><i class="bar seatstay"></i><i class="bar seattube"></i>
+            <i class="bar toptube"></i><i class="bar downtube"></i><i class="bar headtube"></i>
+            <i class="bar fork"></i><i class="bar stem"></i><i class="bar hbar"></i>
+            <i class="saddle"></i>
+            <div class="crankF"><i class="arm af"></i><div class="pwrap pf"><i class="pedal"></i></div></div>
+            <div class="crankN"><i class="arm an"></i><i class="cap"></i>
+              <div class="pwrap pn"><i class="pedal"></i></div></div>
+          </div>
+        </div>
+        <div class="leg near"><div class="thigh"><div class="shin"><div class="foot"></div></div></div></div>
+      </div>
+
+      <div class="fg">
+        <div class="fgroup">
+          <i class="tuft" style="left:calc(26*var(--u))"></i>
+          <i class="tuft fl" style="left:calc(140*var(--u));transform:scale(1.25)"></i>
+          <i class="tuft" style="left:calc(252*var(--u));transform:scale(.85) scaleX(-1)"></i>
+          <i class="tuft" style="left:calc(356*var(--u));transform:scale(1.1)"></i>
+          <i class="tuft fl" style="left:calc(452*var(--u));transform:scale(.9)"></i>
+        </div>
+        <div class="fgroup" aria-hidden="true">
+          <i class="tuft" style="left:calc(26*var(--u))"></i>
+          <i class="tuft fl" style="left:calc(140*var(--u));transform:scale(1.25)"></i>
+          <i class="tuft" style="left:calc(252*var(--u));transform:scale(.85) scaleX(-1)"></i>
+          <i class="tuft" style="left:calc(356*var(--u));transform:scale(1.1)"></i>
+          <i class="tuft fl" style="left:calc(452*var(--u));transform:scale(.9)"></i>
+        </div>
+      </div>
+
+      <div class="storm"></div>
+      <div class="puddles"><i class="pd p1"></i><i class="pd p2"></i><i class="pd p3"></i></div>
+      <div class="rainw"><i class="rain r1"></i><i class="rain r2"></i><i class="flash"></i></div>
+
+      <!-- 彩蛋 UI -->
+      <div class="eggprog" aria-hidden="true">
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      </div>
+      <label class="eggbtn" for="egg">也许......在某个世界线上有另一种可能？</label>
+      <div class="whiteout"></div>
+      <label class="eggback" for="egg">↩ 回到原世界线</label>
+
+      <figcaption class="brand">
+        <span class="eyebrow">PURE HTML + CSS · NO JS · NO IMAGE</span>
+        <h1>鹈鹕专送</h1>
+        <p>海风一号公路 · 今日顺风 · 踏频 48 rpm</p>
+      </figcaption>
+    </figure>
+
+    <div class="controls">
+      <div class="cg"><span>天色</span>
+        <label for="th-day">☀️ 清晨</label>
+        <label for="th-dusk">🌇 黄昏</label>
+        <label for="th-night">🌙 夜骑</label>
+      </div>
+      <div class="cg"><span>节奏</span>
+        <label for="sp-stroll">🚶 散步</label>
+        <label for="sp-cruise">🚲 巡航</label>
+        <label for="sp-rush">🔥 冲刺</label>
+      </div>
+      <div class="cg"><span>坐骑</span>
+        <label for="bd-pelican">🪽 鹈鹕</label>
+        <label for="bd-parrot">🦜 鹦鹉</label>
+        <label for="bd-owl">🦉 猫头鹰</label>
+      </div>
+      <div class="cg"><span>座驾</span>
+        <label for="vh-bike">🚲 自行车</label>
+        <label for="vh-skate">🛹 滑板</label>
+        <label for="vh-escooter">🛵 电动车</label>
+      </div>
+      <div class="cg"><span>天气</span>
+        <label for="wx-sun">☀️ 晴天</label>
+        <label for="wx-rain">🌧️ 雨天</label>
+      </div>
+      <div class="cg"><span>画面</span>
+        <label for="hold"><span class="t1">⏸ 暂停细看</span><span class="t2">▶ 继续骑</span></label>
+      </div>
+    </div>
+    <p class="hint">小贴士：鹈鹕×自行车时，连续点鹈鹕 14 次会有奇怪的事发生；右上角圆点是计数进度。</p>
+  </div>
+
+  <!-- （4）维修手册：按钮切换显隐 -->
+  <div class="labbtn">
+    <label for="lab-show"><span class="t1">🔧 展开 · 技术实现（BEHIND THE SCENES）</span><span class="t2">🙈 收起 · 技术实现</span></label>
+  </div>
+  <div class="labwrap">
+    <div class="labinner">
+      <section class="lab">
+        <div class="lab-head reveal">
+          <p class="kicker">BEHIND THE SCENES · 维修手册</p>
+          <h2>没有一张图片，全是盒子</h2>
+          <p class="lead">整段动画由 div、border、渐变和关键帧拼成：公路是三层速度不同的传送带，踩踏的两条腿是用余弦定理解出来的 12 帧骨骼；换成滑板或电动车时，同一套腿骨切换为站姿静态角度，鸟身整体平移对齐踏板。三种坐骑 × 三种座驾 × 两种天气，再加一个藏了 14 次点击的彩蛋，依旧没有一行 JavaScript。</p>
+          <div class="badges">
+            <span>0 张图片</span><span>0 行 JS</span><span>3 坐骑</span><span>3 座驾</span><span>2 天气</span><span>12 帧骨骼</span><span>3 层视差</span><span>1 个彩蛋</span>
+          </div>
+        </div>
+
+        <div class="board">
+          <div class="lab-grid">
+            <div class="col">
+              <div class="card reveal">
+                <div class="demo" id="demo-leg"><div class="dscene">
+                  <div class="anchor">
+                    <i class="orbit"></i><i class="floor"></i>
+                    <div class="crankN"><i class="arm an"></i><i class="cap"></i>
+                      <div class="pwrap pn"><i class="pedal"></i></div></div>
+                    <div class="leg near"><div class="thigh"><div class="shin"><div class="foot"></div></div></div></div>
+                  </div>
+                </div></div>
+                <h3><span class="no">1</span>两条腿，12 帧手算骨骼</h3>
+                <p>每一帧先定踏板位置，再用余弦定理解出大腿、小腿的转角；脚掌另跑一组反向关键帧保持水平。滑板 / 电动车复用同一套腿骨，只是把动画关掉、换成静态站姿角度。</p>
+                <table class="ik">
+                  <tr><th>曲柄角</th><th>大腿</th><th>小腿（相对）</th></tr>
+                  <tr><td>0°</td><td>−5°</td><td>129°</td></tr>
+                  <tr><td>30°</td><td>−8°</td><td>114°</td></tr>
+                  <tr><td>60°</td><td>2°</td><td>93°</td></tr>
+                  <tr><td>90°</td><td>18°</td><td>70°</td></tr>
+                  <tr><td>120°</td><td>37°</td><td>47°</td></tr>
+                  <tr><td>150°</td><td>53°</td><td>30°</td></tr>
+                  <tr><td>180°</td><td>61°</td><td>33°</td></tr>
+                </table>
+                <code class="chip">animation: kThigh var(--pedal) linear infinite</code>
+              </div>
+            </div>
+
+            <div class="col">
+              <div class="card reveal">
+                <div class="demo" id="demo-wheel"><div class="dscene">
+                  <div class="anchor"><div class="wheel"></div></div>
+                </div></div>
+                <h3><span class="no">2</span>车轮 = 一圈 border</h3>
+                <p>轮胎是 border，辐条是 repeating-conic-gradient，轴心是 ::after。滑板轮、电动车轮只是把半径和转速换了参数。</p>
+                <code class="chip">repeating-conic-gradient(#cfd3dc 0 2.4deg, transparent 2.4deg 45deg)</code>
+              </div>
+
+              <div class="card reveal">
+                <div class="demo" id="demo-belt"><div class="dscene">
+                  <i class="dground"></i>
+                  <div class="belt">
+                    <div class="bgroup">
+                      <i class="it lamp" style="left:calc(30*var(--u))"></i><i class="it bush" style="left:calc(120*var(--u))"></i>
+                      <i class="it bench" style="left:calc(220*var(--u))"></i><i class="it buoy" style="left:calc(300*var(--u))"></i>
+                    </div>
+                    <div class="bgroup" aria-hidden="true">
+                      <i class="it lamp" style="left:calc(30*var(--u))"></i><i class="it bush" style="left:calc(120*var(--u))"></i>
+                      <i class="it bench" style="left:calc(220*var(--u))"></i><i class="it buoy" style="left:calc(300*var(--u))"></i>
+                    </div>
+                  </div>
+                </div></div>
+                <h3><span class="no">3</span>公路是一条无限传送带</h3>
+                <p>草丛最快、路灯长椅中速、云最慢——速度差就是“在前进”的错觉。每层内容复制两份，滚过一个周期宽度后无缝接上。</p>
+                <code class="chip">@keyframes kBelt { to { transform: translateX(-1000u) } }</code>
+              </div>
+
+              <div class="card reveal">
+                <div class="demo" id="demo-face"><div class="dscene">
+                  <div class="anchor">
+                    <i class="neck"></i><i class="head"></i>
+                    <div class="pouchw"><i class="pouch"></i></div>
+                    <i class="beak"></i><i class="eye"></i><i class="lid"></i>
+                  </div>
+                </div></div>
+                <h3><span class="no">4</span>微表情与纯 CSS 计数器</h3>
+                <p>眨眼 4.6 秒一次，喉囊 2.6 秒晃一下。彩蛋的“14 次点击”也是纯 CSS：14 层透明 label 叠在鹈鹕身上，每层只在前一层勾选后才可点，勾满第 14 个 checkbox 才唤出神秘按钮。</p>
+                <code class="chip">#e14:checked ~ .stagewrap .eggbtn { opacity: 1 }</code>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="ticker reveal" aria-hidden="true">
+    <div class="tk">
+      <span>保持踏频 ✦ 鹦鹉猫头鹰轮班 ✦ 滑板电动车备勤 ✦ 雨天记得开灯 ✦ 某个世界线上自行车骑着鹈鹕 ✦ 本页面没有一张图片 ✦ 也没有一行 JavaScript ✦&nbsp;</span>
+      <span>保持踏频 ✦ 鹦鹉猫头鹰轮班 ✦ 滑板电动车备勤 ✦ 雨天记得开灯 ✦ 某个世界线上自行车骑着鹈鹕 ✦ 本页面没有一张图片 ✦ 也没有一行 JavaScript ✦&nbsp;</span>
+    </div>
+  </div>
+  <footer>纯 HTML + CSS 手搓 · 字体：站酷快乐体 × 思源黑体 · 海鸟全程没有蹬空</footer>
+</main>
+</body>
+</html>
